@@ -63,13 +63,6 @@ class ReceiptCubit extends Cubit<ReceiptState> {
     );
   }
 
-  int quantityOf(String barcode) {
-    for (final line in state.lines) {
-      if (line.barcode == barcode) return line.quantity;
-    }
-    return 0;
-  }
-
   void _update(String barcode, ReceiptLine Function(ReceiptLine) change) {
     emit(
       state.copyWith(
