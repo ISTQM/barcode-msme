@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../cubit/inventory_cubit.dart';
+import '../services/scan_feedback.dart';
 import '../widgets/item_sheet.dart';
 import '../widgets/viewfinder.dart';
 
@@ -105,7 +105,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     }
 
     _sheetOpen = true;
-    HapticFeedback.mediumImpact();
+    context.read<ScanFeedback>().play(ScanTone.scanned);
     await showItemSheet(
       context,
       cubit: context.read<InventoryCubit>(),
