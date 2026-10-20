@@ -14,7 +14,14 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  static const int _receiptTab = 2;
+
   int _index = 0;
+
+  void _select(int index) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _index = index);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,10 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          ScannerScreen(active: _index == 0),
+          ScannerScreen(
+            active: _index == 0,
+            onReviewReceipt: () => _select(_receiptTab),
+          ),
           const InventoryScreen(),
           const ReceiptScreen(),
           const ExportScreen(),
@@ -30,10 +40,7 @@ class _HomeShellState extends State<HomeShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (index) {
-          FocusManager.instance.primaryFocus?.unfocus();
-          setState(() => _index = index);
-        },
+        onDestinationSelected: _select,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.qr_code_scanner),
