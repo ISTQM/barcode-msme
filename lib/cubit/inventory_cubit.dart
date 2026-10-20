@@ -18,6 +18,7 @@ class InventoryCubit extends Cubit<InventoryState> {
     required String barcode,
     required String name,
     required int quantity,
+    int priceCentavos = 0,
   }) async {
     await _repository.put(
       InventoryItem(
@@ -25,6 +26,7 @@ class InventoryCubit extends Cubit<InventoryState> {
         name: name.trim(),
         quantity: quantity,
         scannedAt: DateTime.now(),
+        priceCentavos: priceCentavos,
       ),
     );
     _reload();
