@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/app_theme.dart';
 import 'cubit/inventory_cubit.dart';
 import 'data/inventory_repository.dart';
+import 'screens/home_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,7 @@ class StockScanApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        home: const Scaffold(body: Center(child: Text('Stock Scan'))),
+        home: const HomeShell(),
       ),
     );
   }
