@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'export_screen.dart';
 import 'inventory_screen.dart';
+import 'receipt_screen.dart';
 import 'scanner_screen.dart';
 
 /// Opens straight on the scanner. The camera is only live on that tab.
@@ -23,6 +24,7 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           ScannerScreen(active: _index == 0),
           const InventoryScreen(),
+          const ReceiptScreen(),
           const ExportScreen(),
         ],
       ),
@@ -41,6 +43,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.list_alt_outlined),
             selectedIcon: Icon(Icons.list_alt),
             label: 'Inventory',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Receipt',
           ),
           NavigationDestination(
             icon: Icon(Icons.ios_share_outlined),
