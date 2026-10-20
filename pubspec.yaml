@@ -1,7 +1,7 @@
 name: qr_msme
-description: "A new Flutter project."
+description: "Offline barcode inventory with BIR Excel export."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.8.0+1
 
 environment:
   sdk: ^3.12.2
