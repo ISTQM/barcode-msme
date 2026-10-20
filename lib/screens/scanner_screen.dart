@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../core/scan_gate.dart';
 import '../cubit/inventory_cubit.dart';
 import '../services/scan_feedback.dart';
 import '../widgets/item_sheet.dart';
@@ -36,11 +37,9 @@ class _ScannerScreenState extends State<ScannerScreen>
     ],
   );
 
-  static const Duration _rescanCooldown = Duration(seconds: 2);
+  final ScanGate _gate = ScanGate();
 
   bool _sheetOpen = false;
-  String? _lastBarcode;
-  DateTime? _lastClosedAt;
 
   @override
   void initState() {
@@ -84,35 +83,26 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_sheetOpen || !widget.active) return;
+    if (!widget.active) return;
 
-    String? barcode;
+    // Every sighting is recorded, even while the sheet is open, so a barcode
+    // that stays in view after saving is not scanned a second time.
+    String? fresh;
     for (final candidate in capture.barcodes) {
       final value = candidate.rawValue?.trim();
-      if (value != null && value.isNotEmpty) {
-        barcode = value;
-        break;
-      }
+      if (value == null || value.isEmpty) continue;
+      if (_gate.accept(value) && fresh == null) fresh = value;
     }
-    if (barcode == null) return;
+    if (fresh == null || _sheetOpen) return;
 
-    // The camera is still pointing at the item that was just saved.
-    final closedAt = _lastClosedAt;
-    if (barcode == _lastBarcode &&
-        closedAt != null &&
-        DateTime.now().difference(closedAt) < _rescanCooldown) {
-      return;
-    }
+    final cubit = context.read<InventoryCubit>();
+    final known = cubit.find(fresh) != null;
 
     _sheetOpen = true;
-    context.read<ScanFeedback>().play(ScanTone.scanned);
-    await showItemSheet(
-      context,
-      cubit: context.read<InventoryCubit>(),
-      barcode: barcode,
+    context.read<ScanFeedback>().play(
+      known ? ScanTone.duplicate : ScanTone.scanned,
     );
-    _lastBarcode = barcode;
-    _lastClosedAt = DateTime.now();
+    await showItemSheet(context, cubit: cubit, barcode: fresh);
     _sheetOpen = false;
   }
 
