@@ -30,9 +30,15 @@ class InventoryCubit extends Cubit<InventoryState> {
     _reload();
   }
 
+  /// Drops the item from state first so a swiped tile leaves the tree in the
+  /// same frame, then removes it from disk.
   Future<void> delete(String barcode) async {
+    emit(
+      state.copyWith(
+        items: state.items.where((item) => item.barcode != barcode).toList(),
+      ),
+    );
     await _repository.delete(barcode);
-    _reload();
   }
 
   /// Puts back a deleted item untouched, used by the undo snackbar.
