@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/money.dart';
 import '../data/inventory_item.dart';
 
 class ItemTile extends StatelessWidget {
@@ -28,7 +29,9 @@ class ItemTile extends StatelessWidget {
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
-          '${item.barcode}\n${_stamp.format(item.scannedAt)}',
+          '${item.barcode}'
+          '${item.priceCentavos > 0 ? ' · ${Money.peso(item.priceCentavos)}' : ''}'
+          '\n${_stamp.format(item.scannedAt)}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),
