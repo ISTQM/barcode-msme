@@ -102,7 +102,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     context.read<ScanFeedback>().play(
       known ? ScanTone.duplicate : ScanTone.scanned,
     );
-    await showItemSheet(context, cubit: cubit, barcode: fresh);
+    await showItemSheet(context, cubit: cubit, barcode: fresh, scanned: true);
     _sheetOpen = false;
   }
 

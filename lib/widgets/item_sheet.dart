@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../core/money.dart';
 import '../cubit/inventory_cubit.dart';
@@ -7,10 +8,15 @@ import '../data/inventory_item.dart';
 
 /// Bottom sheet used for both a fresh scan and a manual edit from the list.
 /// Resolves to true when the item was saved.
+///
+/// Pass [scanned] when the sheet was opened by the camera. If that barcode is
+/// already stored, the sheet says so and offers to add to the count instead of
+/// replacing it.
 Future<bool> showItemSheet(
   BuildContext context, {
   required InventoryCubit cubit,
   required String barcode,
+  bool scanned = false,
 }) async {
   final saved = await showModalBottomSheet<bool>(
     context: context,
@@ -20,6 +26,7 @@ Future<bool> showItemSheet(
       cubit: cubit,
       barcode: barcode,
       existing: cubit.find(barcode),
+      scanned: scanned,
     ),
   );
   return saved ?? false;
@@ -30,11 +37,13 @@ class _ItemSheet extends StatefulWidget {
     required this.cubit,
     required this.barcode,
     required this.existing,
+    required this.scanned,
   });
 
   final InventoryCubit cubit;
   final String barcode;
   final InventoryItem? existing;
+  final bool scanned;
 
   @override
   State<_ItemSheet> createState() => _ItemSheetState();
@@ -44,10 +53,25 @@ class _ItemSheetState extends State<_ItemSheet> {
   late final TextEditingController _name;
   late final TextEditingController _quantity;
   late final TextEditingController _price;
+  final FocusNode _quantityFocus = FocusNode();
+
+  static final DateFormat _stamp = DateFormat('MMM d, h:mm a');
+
+  /// Duplicate scan mode: type an amount to add instead of a new total.
+  bool _adding = false;
 
   bool get _isExisting => widget.existing != null;
 
+  /// A scan of a barcode that is already stored.
+  bool get _isDuplicateScan => widget.scanned && _isExisting;
+
   int? get _parsedQuantity => int.tryParse(_quantity.text);
+
+  /// What gets stored: the typed total, or the stored count plus the typed
+  /// amount.
+  int get _finalQuantity => _adding
+      ? widget.existing!.quantity + _parsedQuantity!
+      : _parsedQuantity!;
 
   /// Optional: a blank or invalid price saves as zero.
   int get _parsedPrice => Money.parse(_price.text) ?? 0;
@@ -79,6 +103,7 @@ class _ItemSheetState extends State<_ItemSheet> {
     _name.dispose();
     _quantity.dispose();
     _price.dispose();
+    _quantityFocus.dispose();
     super.dispose();
   }
 
@@ -87,12 +112,26 @@ class _ItemSheetState extends State<_ItemSheet> {
     setState(() => _quantity.text = next.toString());
   }
 
+  void _setAdding(bool adding) {
+    setState(() {
+      _adding = adding;
+      // Adding starts from nothing so the stored count is never doubled by
+      // accident. Replacing starts from the stored count.
+      _quantity.text = adding ? '' : widget.existing!.quantity.toString();
+      _quantity.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _quantity.text.length,
+      );
+    });
+    _quantityFocus.requestFocus();
+  }
+
   Future<void> _save() async {
     if (!_canSave) return;
     await widget.cubit.save(
       barcode: widget.barcode,
       name: _name.text,
-      quantity: _parsedQuantity!,
+      quantity: _finalQuantity,
       priceCentavos: _parsedPrice,
     );
     HapticFeedback.lightImpact();
@@ -116,7 +155,11 @@ class _ItemSheetState extends State<_ItemSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              _isExisting ? 'Update item' : 'New item',
+              _isDuplicateScan
+                  ? 'Already in inventory'
+                  : _isExisting
+                      ? 'Update item'
+                      : 'New item',
               style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -140,6 +183,47 @@ class _ItemSheetState extends State<_ItemSheet> {
                 ),
               ],
             ),
+            if (_isDuplicateScan) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer.withValues(
+                    alpha: 0.6,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: theme.colorScheme.onTertiaryContainer,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${widget.existing!.quantity} in stock · last scanned '
+                        '${_stamp.format(widget.existing!.scannedAt)}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Replace count')),
+                  ButtonSegment(value: true, label: Text('Add to count')),
+                ],
+                selected: {_adding},
+                onSelectionChanged: (s) => _setAdding(s.first),
+              ),
+            ],
             const SizedBox(height: 16),
             TextField(
               controller: _name,
@@ -160,6 +244,7 @@ class _ItemSheetState extends State<_ItemSheet> {
                 Expanded(
                   child: TextField(
                     controller: _quantity,
+                    focusNode: _quantityFocus,
                     autofocus: _isExisting,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
@@ -168,8 +253,8 @@ class _ItemSheetState extends State<_ItemSheet> {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(9),
                     ],
-                    decoration: const InputDecoration(
-                      labelText: 'Stock quantity',
+                    decoration: InputDecoration(
+                      labelText: _adding ? 'Quantity to add' : 'Stock quantity',
                     ),
                     style: theme.textTheme.titleLarge,
                     onChanged: (_) => setState(() {}),
@@ -200,7 +285,13 @@ class _ItemSheetState extends State<_ItemSheet> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _canSave ? _save : null,
-              child: Text(_isExisting ? 'Update' : 'Save'),
+              child: Text(
+                !_isExisting
+                    ? 'Save'
+                    : _adding && _parsedQuantity != null
+                        ? 'Update to $_finalQuantity'
+                        : 'Update',
+              ),
             ),
           ],
         ),
