@@ -16,6 +16,7 @@ dependencies:
   intl: ^0.20.2
   mobile_scanner: ^7.4.2
   path_provider: ^2.1.6
+  pdf: ^3.12.0
   share_plus: ^13.3.1
 
 dev_dependencies:
@@ -25,3 +26,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Bundled so receipt PDFs render without any network or system font lookup.
+  assets:
+    - assets/fonts/Roboto-Regular.ttf
+    - assets/fonts/Roboto-Bold.ttf
