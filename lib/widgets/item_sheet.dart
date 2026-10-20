@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/money.dart';
 import '../cubit/inventory_cubit.dart';
 import '../data/inventory_item.dart';
 
@@ -42,10 +43,14 @@ class _ItemSheet extends StatefulWidget {
 class _ItemSheetState extends State<_ItemSheet> {
   late final TextEditingController _name;
   late final TextEditingController _quantity;
+  late final TextEditingController _price;
 
   bool get _isExisting => widget.existing != null;
 
   int? get _parsedQuantity => int.tryParse(_quantity.text);
+
+  /// Optional: a blank or invalid price saves as zero.
+  int get _parsedPrice => Money.parse(_price.text) ?? 0;
 
   bool get _canSave => _name.text.trim().isNotEmpty && _parsedQuantity != null;
 
@@ -55,6 +60,11 @@ class _ItemSheetState extends State<_ItemSheet> {
     final existing = widget.existing;
     _name = TextEditingController(text: existing?.name ?? '');
     _quantity = TextEditingController(text: existing?.quantity.toString() ?? '');
+    _price = TextEditingController(
+      text: existing != null && existing.priceCentavos > 0
+          ? Money.field(existing.priceCentavos)
+          : '',
+    );
     if (existing != null) {
       // Selected so a fresh count can be typed straight over the old one.
       _quantity.selection = TextSelection(
@@ -68,6 +78,7 @@ class _ItemSheetState extends State<_ItemSheet> {
   void dispose() {
     _name.dispose();
     _quantity.dispose();
+    _price.dispose();
     super.dispose();
   }
 
@@ -82,6 +93,7 @@ class _ItemSheetState extends State<_ItemSheet> {
       barcode: widget.barcode,
       name: _name.text,
       quantity: _parsedQuantity!,
+      priceCentavos: _parsedPrice,
     );
     HapticFeedback.lightImpact();
     if (mounted) Navigator.of(context).pop(true);
@@ -170,6 +182,20 @@ class _ItemSheetState extends State<_ItemSheet> {
                   icon: const Icon(Icons.add),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _price,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d{0,7}(\.\d{0,2})?$')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Unit price (optional)',
+                prefixText: '₱ ',
+              ),
+              onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 20),
             FilledButton(
