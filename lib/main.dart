@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/app_theme.dart';
 import 'cubit/inventory_cubit.dart';
+import 'cubit/receipt_cubit.dart';
 import 'data/inventory_repository.dart';
 import 'screens/home_shell.dart';
 
@@ -19,8 +20,11 @@ class StockScanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => InventoryCubit(repository),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => InventoryCubit(repository)),
+        BlocProvider(create: (_) => ReceiptCubit()),
+      ],
       child: MaterialApp(
         title: 'Stock Scan',
         debugShowCheckedModeBanner: false,
