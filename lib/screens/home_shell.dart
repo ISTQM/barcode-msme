@@ -1,0 +1,54 @@
+import 'package:flutter/material.dart';
+
+import 'export_screen.dart';
+import 'inventory_screen.dart';
+import 'scanner_screen.dart';
+
+/// Opens straight on the scanner. The camera is only live on that tab.
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
+
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _index,
+        children: [
+          ScannerScreen(active: _index == 0),
+          const InventoryScreen(),
+          const ExportScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (index) {
+          FocusManager.instance.primaryFocus?.unfocus();
+          setState(() => _index = index);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.list_alt_outlined),
+            selectedIcon: Icon(Icons.list_alt),
+            label: 'Inventory',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.ios_share_outlined),
+            selectedIcon: Icon(Icons.ios_share),
+            label: 'Export',
+          ),
+        ],
+      ),
+    );
+  }
+}
