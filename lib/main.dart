@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
+import 'core/app_theme.dart';
+
 void main() {
-  runApp(const MainApp());
+  runApp(const StockScanApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class StockScanApp extends StatelessWidget {
+  const StockScanApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+    return MaterialApp(
+      title: 'Stock Scan',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      home: const Scaffold(body: Center(child: Text('Stock Scan'))),
     );
   }
 }
