@@ -13,7 +13,7 @@ class Viewfinder extends StatelessWidget {
         children: [
           Positioned.fill(child: CustomPaint(painter: _BracketPainter())),
           Align(
-            alignment: const Alignment(0, 0.55),
+            alignment: const Alignment(0, 0.32),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(

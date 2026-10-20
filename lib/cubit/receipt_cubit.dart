@@ -35,6 +35,15 @@ class ReceiptCubit extends Cubit<ReceiptState> {
     );
   }
 
+  /// Takes one unit off a line, and drops the line when it was the last unit.
+  /// This is the undo for a scan that was counted by mistake.
+  void decrement(String barcode) {
+    final matches = state.lines.where((l) => l.barcode == barcode);
+    if (matches.isEmpty) return;
+    final quantity = matches.first.quantity;
+    quantity > 1 ? setQuantity(barcode, quantity - 1) : remove(barcode);
+  }
+
   void setQuantity(String barcode, int quantity) {
     _update(barcode, (line) => line.copyWith(quantity: quantity < 1 ? 1 : quantity));
   }
