@@ -17,7 +17,7 @@ const Duration _kEntrance = Duration(milliseconds: 950);
 const Duration _kHold = Duration(milliseconds: 180);
 
 /// Beautiful Mobbin-inspired splash screen adapted from msa-app.
-/// Features a compact, centered brand mark, ambient radial glow,
+/// Features a prominent brand disc, compact centered inner emblem, ambient radial glow,
 /// expanding ripple, circular progress track, and fluid transition to the home shell.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.frozenAt});
@@ -110,8 +110,8 @@ class _SplashScreenState extends State<SplashScreen>
     final brand = BrandScope.of(context);
     final size = MediaQuery.sizeOf(context);
     final inset = MediaQuery.paddingOf(context);
-    // Smaller, more refined logo disc with generous breathing room
-    final disc = (size.shortestSide * 0.22).clamp(80.0, 94.0);
+    // Outer disc container size matching the msa-app proportion
+    final disc = (size.shortestSide * 0.36).clamp(126.0, 156.0);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -157,13 +157,13 @@ class _SplashScreenState extends State<SplashScreen>
                     // Perfectly centered hero mark
                     Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 380),
+                        constraints: const BoxConstraints(maxWidth: 400),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
-                              width: disc + 56,
-                              height: disc + 56,
+                              width: disc + 72,
+                              height: disc + 72,
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -186,7 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   Opacity(
                                     opacity: logoFade.clamp(0.0, 1.0),
                                     child: Transform.scale(
-                                      scale: 0.82 + 0.18 * logoIn,
+                                      scale: 0.80 + 0.20 * logoIn,
                                       child: _BrandDisc(
                                         size: disc,
                                         cornerStyle: brand.cornerStyle,
@@ -196,7 +196,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             // App Name
                             Opacity(
                               opacity: title.clamp(0.0, 1.0),
@@ -205,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 child: Text(
                                   brand.appName,
                                   style: const TextStyle(
-                                    fontSize: 25,
+                                    fontSize: 27,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.6,
                                     color: Colors.white,
@@ -213,7 +213,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 6),
                             // Tagline
                             Opacity(
                               opacity: tagline.clamp(0.0, 1.0),
@@ -223,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   brand.tagline,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 13.5,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0.1,
                                     color: Colors.white.withValues(alpha: 0.60),
@@ -281,7 +281,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// Refined logo disc with generous internal margins and clean scanner emblem.
+/// Logo disc with a refined, smaller, and centered inner emblem with generous breathing room.
 class _BrandDisc extends StatelessWidget {
   const _BrandDisc({
     required this.size,
@@ -296,19 +296,18 @@ class _BrandDisc extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      padding: EdgeInsets.all(size * 0.22),
       decoration: BoxDecoration(
         color: const Color(0xFF141416),
-        borderRadius: BorderRadius.circular(size * 0.30),
+        shape: BoxShape.circle,
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.22),
-          width: 1.5,
+          width: 2.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.65),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.60),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -316,7 +315,8 @@ class _BrandDisc extends StatelessWidget {
         child: Icon(
           Icons.qr_code_scanner_rounded,
           color: Colors.white,
-          size: size * 0.50,
+          // Smaller, perfectly centered inner logo with generous negative space
+          size: size * 0.34,
         ),
       ),
     );
@@ -358,7 +358,7 @@ class _RingsPainter extends CustomPainter {
 
     // Expanding Ripple
     if (ripple > 0 && ripple < 1) {
-      final r = discRadius + 12 + (discRadius * 0.8) * ripple;
+      final r = discRadius + 14 + (discRadius * 0.85) * ripple;
       canvas.drawCircle(
         center,
         r,
@@ -370,7 +370,7 @@ class _RingsPainter extends CustomPainter {
     }
 
     // Progress Track and Arc
-    final ringRadius = discRadius + 12;
+    final ringRadius = discRadius + 14;
     final rect = Rect.fromCircle(center: center, radius: ringRadius);
 
     // Faint track
@@ -392,7 +392,7 @@ class _RingsPainter extends CustomPainter {
         false,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0
+          ..strokeWidth = 2.2
           ..strokeCap = StrokeCap.round
           ..color = Colors.white.withValues(alpha: 0.92),
       );
