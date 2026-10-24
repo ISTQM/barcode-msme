@@ -7,6 +7,7 @@ import '../cubit/inventory_cubit.dart';
 import '../cubit/receipt_cubit.dart';
 import '../services/scan_feedback.dart';
 import '../widgets/item_sheet.dart';
+import '../widgets/micro_animations.dart';
 import '../widgets/receipt_scan_panel.dart';
 import '../widgets/viewfinder.dart';
 
@@ -156,7 +157,8 @@ class _ScannerScreenState extends State<ScannerScreen>
     final inventory = context.read<InventoryCubit>();
 
     _sheetOpen = true;
-    final saved = await showItemSheet(context, cubit: inventory, barcode: barcode);
+    final saved =
+        await showItemSheet(context, cubit: inventory, barcode: barcode);
     _sheetOpen = false;
 
     final item = inventory.find(barcode);
@@ -174,8 +176,6 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -197,39 +197,28 @@ class _ScannerScreenState extends State<ScannerScreen>
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 44),
                     Expanded(
                       child: Center(
-                        child: SegmentedButton<ScanMode>(
-                          showSelectedIcon: false,
-                          style: SegmentedButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                            foregroundColor: Colors.white,
-                            selectedBackgroundColor: scheme.primary,
-                            selectedForegroundColor: scheme.onPrimary,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 240),
+                          child: SleekSegmentedControl<ScanMode>(
+                            items: const {
+                              ScanMode.stock: 'Stock',
+                              ScanMode.receipt: 'Receipt',
+                            },
+                            selected: _mode,
+                            onChanged: _setMode,
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          segments: const [
-                            ButtonSegment(
-                              value: ScanMode.stock,
-                              label: Text('Stock'),
-                              icon: Icon(Icons.inventory_2_outlined),
-                            ),
-                            ButtonSegment(
-                              value: ScanMode.receipt,
-                              label: Text('Receipt'),
-                              icon: Icon(Icons.receipt_long_outlined),
-                            ),
-                          ],
-                          selected: {_mode},
-                          onSelectionChanged: (s) => _setMode(s.first),
                         ),
                       ),
                     ),
                     SizedBox(
-                      width: 48,
+                      width: 44,
                       child: _TorchButton(controller: _controller),
                     ),
                   ],
@@ -266,14 +255,37 @@ class _TorchButton extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final on = state.torchState == TorchState.on;
-        return IconButton.filled(
-          onPressed: controller.toggleTorch,
-          style: IconButton.styleFrom(
-            backgroundColor: on ? Colors.amber : Colors.black54,
-            foregroundColor: on ? Colors.black : Colors.white,
+        return TapScale(
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: on ? Colors.white : Colors.black.withValues(alpha: 0.65),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: on
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.18),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              onPressed: controller.toggleTorch,
+              tooltip: 'Flashlight',
+              icon: Icon(
+                on ? Icons.flash_on : Icons.flash_off,
+                size: 20,
+                color: on ? Colors.black : Colors.white,
+              ),
+            ),
           ),
-          tooltip: 'Flashlight',
-          icon: Icon(on ? Icons.flash_on : Icons.flash_off),
         );
       },
     );

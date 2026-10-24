@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/brand_config.dart';
 import '../core/money.dart';
 import '../cubit/receipt_cubit.dart';
 import '../cubit/receipt_state.dart';
 import '../data/receipt.dart';
+import 'micro_animations.dart';
 
 /// What the most recent receipt-mode scan did.
 class ReceiptScanResult {
@@ -17,9 +19,8 @@ class ReceiptScanResult {
   final bool unknown;
 }
 
-/// Sits over the camera in receipt mode. Shows the last scan, with its running
-/// quantity so repeated scans of one product are easy to follow, and the
-/// receipt total.
+/// Sits over the camera in receipt mode. Shows the last scan with a bouncing
+/// badge, running quantity, tactile buttons, and receipt total.
 class ReceiptScanPanel extends StatelessWidget {
   const ReceiptScanPanel({
     super.key,
@@ -35,71 +36,134 @@ class ReceiptScanPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final brand = BrandScope.of(context);
+    final borderColor =
+        isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
 
-    return Material(
-      color: scheme.surface,
-      elevation: 8,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: BlocBuilder<ReceiptCubit, ReceiptState>(
-          builder: (context, state) {
-            final lines = state.lines;
-            final units = lines.fold<int>(0, (sum, l) => sum + l.quantity);
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF121214) : Colors.white,
+        borderRadius: brand.cornerStyle.sheetRadius,
+        border: Border(
+          top: BorderSide(color: borderColor, width: 1),
+          left: BorderSide(color: borderColor, width: 1),
+          right: BorderSide(color: borderColor, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+          child: BlocBuilder<ReceiptCubit, ReceiptState>(
+            builder: (context, state) {
+              final lines = state.lines;
+              final units = lines.fold<int>(0, (sum, l) => sum + l.quantity);
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 150),
-                  alignment: Alignment.topCenter,
-                  child: _lastRow(context, state),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: lines.isEmpty
-                          ? Text(
-                              'Scan items to build a receipt',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: scheme.onSurfaceVariant,
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: _lastRow(context, state),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: lines.isEmpty
+                            ? Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: isDark
+                                        ? const Color(0xFFA1A1AA)
+                                        : const Color(0xFF71717A),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Scan items to build a receipt',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? const Color(0xFFA1A1AA)
+                                          : const Color(0xFF71717A),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${lines.length} ${lines.length == 1 ? 'item' : 'items'}'
+                                    ' · $units pcs',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? const Color(0xFFA1A1AA)
+                                          : const Color(0xFF71717A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    Money.peso(state.totalCentavos),
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.4,
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF09090B),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${lines.length} ${lines.length == 1 ? 'item' : 'items'}'
-                                  ' · $units pcs',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                Text(
-                                  Money.peso(state.totalCentavos),
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    if (lines.isNotEmpty)
-                      FilledButton.icon(
-                        onPressed: onReview,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, 48),
-                        ),
-                        icon: const Icon(Icons.receipt_long),
-                        label: const Text('Review'),
                       ),
-                  ],
-                ),
-              ],
-            );
-          },
+                      if (lines.isNotEmpty)
+                        TapScale(
+                          child: FilledButton.icon(
+                            onPressed: onReview,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF09090B),
+                              foregroundColor: isDark
+                                  ? Colors.black
+                                  : Colors.white,
+                              minimumSize: const Size(116, 46),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: brand.cornerStyle.smallRadius,
+                              ),
+                            ),
+                            icon: const Icon(Icons.receipt_long, size: 18),
+                            label: const Text(
+                              'Review',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -110,35 +174,67 @@ class ReceiptScanPanel extends StatelessWidget {
     if (result == null) return const SizedBox(width: double.infinity);
 
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final brand = BrandScope.of(context);
 
     if (result.unknown) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+          borderRadius: brand.cornerStyle.smallRadius,
+          border: Border.all(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
         child: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: scheme.error),
-            const SizedBox(width: 12),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFEF4444),
+              size: 20,
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Not in inventory', style: theme.textTheme.titleSmall),
+                  const Text(
+                    'Not in inventory',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
                   Text(
                     result.barcode,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: TextStyle(
                       fontFamily: 'monospace',
-                      color: scheme.onSurfaceVariant,
+                      fontSize: 11.5,
+                      color: isDark
+                          ? const Color(0xFFA1A1AA)
+                          : const Color(0xFF71717A),
                     ),
                   ),
                 ],
               ),
             ),
-            TextButton(
-              onPressed: () => onAddUnknown(result.barcode),
-              child: const Text('Add item'),
+            TapScale(
+              child: TextButton(
+                onPressed: () => onAddUnknown(result.barcode),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor:
+                      isDark ? Colors.white : const Color(0xFF09090B),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                child: const Text('Add item'),
+              ),
             ),
           ],
         ),
@@ -151,24 +247,37 @@ class ReceiptScanPanel extends StatelessWidget {
     }
     if (line == null) return const SizedBox(width: double.infinity);
 
-    return Padding(
+    return Container(
       key: ValueKey('${line.barcode}-${line.quantity}'),
-      padding: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFF4F4F5),
+        borderRadius: brand.cornerStyle.smallRadius,
+        border: Border.all(
+          color: isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7),
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
-          Container(
-            constraints: const BoxConstraints(minWidth: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '×${line.quantity}',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: scheme.onPrimaryContainer,
-                fontWeight: FontWeight.w800,
+          PopBadge(
+            valueKey: line.quantity,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white : const Color(0xFF09090B),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '×${line.quantity}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.black : Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -181,25 +290,43 @@ class ReceiptScanPanel extends StatelessWidget {
                   line.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                    color: isDark ? Colors.white : const Color(0xFF09090B),
+                  ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   line.unitPriceCentavos > 0
                       ? '${Money.peso(line.unitPriceCentavos)} each · '
                           '${Money.peso(line.amountCentavos)}'
                       : 'No price set',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? const Color(0xFFA1A1AA)
+                        : const Color(0xFF71717A),
                   ),
                 ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: 'Remove one',
-            icon: const Icon(Icons.remove_circle_outline),
-            onPressed: () =>
-                context.read<ReceiptCubit>().decrement(line!.barcode),
+          TapScale(
+            child: IconButton(
+              tooltip: 'Remove one',
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 20,
+                color: isDark
+                    ? const Color(0xFFA1A1AA)
+                    : const Color(0xFF71717A),
+              ),
+              onPressed: () =>
+                  context.read<ReceiptCubit>().decrement(line!.barcode),
+            ),
           ),
         ],
       ),

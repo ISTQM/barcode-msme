@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/app_theme.dart';
+import 'core/brand_config.dart';
 import 'cubit/inventory_cubit.dart';
 import 'cubit/receipt_cubit.dart';
 import 'data/inventory_repository.dart';
-import 'screens/home_shell.dart';
+import 'screens/splash_screen.dart';
 import 'services/scan_feedback.dart';
 
 Future<void> main() async {
@@ -20,26 +21,31 @@ class StockScanApp extends StatelessWidget {
     super.key,
     required this.repository,
     required this.feedback,
+    this.brandConfig = BrandConfig.mobbinMonochrome,
   });
 
   final InventoryRepository repository;
   final ScanFeedback feedback;
+  final BrandConfig brandConfig;
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: feedback,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (_) => InventoryCubit(repository)),
-          BlocProvider(create: (_) => ReceiptCubit()),
-        ],
-        child: MaterialApp(
-          title: 'Barcode MSME',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          home: const HomeShell(),
+    return BrandScope(
+      config: brandConfig,
+      child: RepositoryProvider.value(
+        value: feedback,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => InventoryCubit(repository)),
+            BlocProvider(create: (_) => ReceiptCubit()),
+          ],
+          child: MaterialApp(
+            title: brandConfig.appName,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(brandConfig),
+            darkTheme: AppTheme.dark(brandConfig),
+            home: const SplashScreen(),
+          ),
         ),
       ),
     );
