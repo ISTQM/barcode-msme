@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -10,12 +11,14 @@ import '../cubit/receipt_state.dart';
 import '../services/scan_feedback.dart';
 import '../widgets/item_sheet.dart';
 import '../widgets/micro_animations.dart';
+import '../widgets/push_to_scan_trigger.dart';
 import '../widgets/receipt_scan_panel.dart';
 import '../widgets/viewfinder.dart';
 import 'receipt_screen.dart';
 
 /// Cashier checkout session ("Counter").
 /// Customer items are scanned one by one to assemble a customer receipt.
+/// Includes toggleable Push-to-Scan safety feature (enabled by default) to prevent accidental scanning.
 class CounterScreen extends StatefulWidget {
   const CounterScreen({
     super.key,
@@ -51,10 +54,25 @@ class _CounterScreenState extends State<CounterScreen>
   ReceiptScanResult? _last;
   bool _sheetOpen = false;
 
+  /// Safety feature: enabled by default to prevent accidental scans.
+  bool _pushToScan = true;
+
+  /// True when the user is actively pushing/holding the trigger, or in auto-scan mode.
+  bool _isArmed = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Inherit default push to scan setting from white-label brand configuration.
+    final brand = BrandScope.of(context);
+    _pushToScan = brand.defaultPushToScan;
+    _isArmed = !_pushToScan;
   }
 
   @override
@@ -95,6 +113,9 @@ class _CounterScreenState extends State<CounterScreen>
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (!widget.active || _sheetOpen) return;
 
+    // Safety check: block accidental scans when push-to-scan is active and not armed.
+    if (_pushToScan && !_isArmed) return;
+
     String? fresh;
     for (final candidate in capture.barcodes) {
       final value = candidate.rawValue?.trim();
@@ -102,6 +123,11 @@ class _CounterScreenState extends State<CounterScreen>
       if (_gate.accept(value) && fresh == null) fresh = value;
     }
     if (fresh == null) return;
+
+    // One scan at a time: immediately disarm after a successful detection.
+    if (_pushToScan) {
+      setState(() => _isArmed = false);
+    }
 
     final item = context.read<InventoryCubit>().find(fresh);
     final feedback = context.read<ScanFeedback>();
@@ -151,6 +177,27 @@ class _CounterScreenState extends State<CounterScreen>
     }
   }
 
+  void _toggleSafetyMode() {
+    HapticFeedback.selectionClick();
+    final next = !_pushToScan;
+    setState(() {
+      _pushToScan = next;
+      _isArmed = !next; // Auto mode is always armed
+    });
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text(
+            next
+                ? 'Push to Scan enabled (Accidental scans prevented)'
+                : 'Auto-Scan enabled (Continuous scanning)',
+          ),
+        ),
+      );
+  }
+
   Future<void> _confirmClearCart() async {
     final cubit = context.read<ReceiptCubit>();
     if (cubit.state.lines.isEmpty) return;
@@ -187,6 +234,7 @@ class _CounterScreenState extends State<CounterScreen>
   @override
   Widget build(BuildContext context) {
     final brand = BrandScope.of(context);
+    final isScanningArmed = !_pushToScan || _isArmed;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -202,7 +250,10 @@ class _CounterScreenState extends State<CounterScreen>
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _controller,
             builder: (context, state, _) => state.error == null
-                ? const Viewfinder()
+                ? Viewfinder(
+                    isArmed: isScanningArmed,
+                    pushToScan: _pushToScan,
+                  )
                 : const SizedBox.shrink(),
           ),
           SafeArea(
@@ -310,6 +361,11 @@ class _CounterScreenState extends State<CounterScreen>
                         );
                       },
                     ),
+                    _SafetyToggleButton(
+                      pushToScan: _pushToScan,
+                      onPressed: _toggleSafetyMode,
+                    ),
+                    const SizedBox(width: 8),
                     _TorchButton(controller: _controller),
                   ],
                 ),
@@ -318,13 +374,75 @@ class _CounterScreenState extends State<CounterScreen>
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: ReceiptScanPanel(
-              last: _last,
-              onAddUnknown: _addUnknownToInventory,
-              onReview: _reviewReceipt,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_pushToScan) ...[
+                  PushToScanTrigger(
+                    isArmed: _isArmed,
+                    onArmedChanged: (val) => setState(() => _isArmed = val),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                ReceiptScanPanel(
+                  last: _last,
+                  onAddUnknown: _addUnknownToInventory,
+                  onReview: _reviewReceipt,
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SafetyToggleButton extends StatelessWidget {
+  const _SafetyToggleButton({
+    required this.pushToScan,
+    required this.onPressed,
+  });
+
+  final bool pushToScan;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TapScale(
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: pushToScan
+              ? Colors.white
+              : Colors.black.withValues(alpha: 0.65),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: pushToScan
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.18),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          onPressed: onPressed,
+          tooltip: pushToScan
+              ? 'Push-to-Scan ON (Tap for Auto-Scan)'
+              : 'Auto-Scan ON (Tap for Push-to-Scan Safety)',
+          icon: Icon(
+            pushToScan ? Icons.touch_app_rounded : Icons.flash_auto_rounded,
+            size: 20,
+            color: pushToScan ? Colors.black : Colors.white,
+          ),
+        ),
       ),
     );
   }

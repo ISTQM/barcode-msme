@@ -41,6 +41,7 @@ class BrandConfig {
     required this.receiptDisclaimer,
     required this.cornerStyle,
     required this.palette,
+    this.defaultPushToScan = true,
   });
 
   final String appName;
@@ -54,6 +55,9 @@ class BrandConfig {
   final String receiptDisclaimer;
   final BrandCornerStyle cornerStyle;
   final BrandPalette palette;
+
+  /// Default push-to-scan safety feature setting (prevents accidental scans).
+  final bool defaultPushToScan;
 
   /// Default Mobbin-inspired monochrome black & white theme.
   static const BrandConfig mobbinMonochrome = BrandConfig(
@@ -84,6 +88,7 @@ class BrandConfig {
     String? receiptDisclaimer,
     BrandCornerStyle? cornerStyle,
     BrandPalette? palette,
+    bool? defaultPushToScan,
   }) {
     return BrandConfig(
       appName: appName ?? this.appName,
@@ -97,6 +102,7 @@ class BrandConfig {
       receiptDisclaimer: receiptDisclaimer ?? this.receiptDisclaimer,
       cornerStyle: cornerStyle ?? this.cornerStyle,
       palette: palette ?? this.palette,
+      defaultPushToScan: defaultPushToScan ?? this.defaultPushToScan,
     );
   }
 }
