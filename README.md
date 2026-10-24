@@ -1,4 +1,4 @@
-# Stock Scan (qr_msme)
+# Barcode MSME (barcode_msme)
 
 Offline barcode inventory for small shops. Open the app and scan. No login, no network.
 

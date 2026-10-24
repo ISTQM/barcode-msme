@@ -35,7 +35,7 @@ class StockScanApp extends StatelessWidget {
           BlocProvider(create: (_) => ReceiptCubit()),
         ],
         child: MaterialApp(
-          title: 'Stock Scan',
+          title: 'Barcode MSME',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

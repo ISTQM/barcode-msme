@@ -1,4 +1,4 @@
-name: qr_msme
+name: barcode_msme
 description: "Offline barcode inventory with BIR Excel export and PDF receipts."
 publish_to: 'none'
 version: 0.14.0+1
