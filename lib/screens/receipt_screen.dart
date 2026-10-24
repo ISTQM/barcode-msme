@@ -24,6 +24,20 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
   bool _busy = false;
 
+  void _completeSale() {
+    final cubit = context.read<ReceiptCubit>();
+    cubit.clear();
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Sale completed. Ready for next customer.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+  }
+
   Rect? _buttonRect() {
     final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return null;
@@ -168,6 +182,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             buttonKey: _buttonKey,
             busy: _busy,
             onPrintAndShare: _printAndShare,
+            onCompleteSale: _completeSale,
           ),
         ],
       ),
@@ -276,6 +291,7 @@ class _EmptyHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final brand = BrandScope.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 32),
@@ -308,11 +324,24 @@ class _EmptyHint extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Add items from inventory or scan in Receipt mode.',
+            'Scan customer items in the Counter or add from inventory below.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13.5,
               color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+            ),
+          ),
+          const SizedBox(height: 18),
+          TapScale(
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: brand.cornerStyle.smallRadius,
+                ),
+              ),
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Return to Counter'),
             ),
           ),
         ],
@@ -537,11 +566,13 @@ class _Footer extends StatelessWidget {
     required this.buttonKey,
     required this.busy,
     required this.onPrintAndShare,
+    required this.onCompleteSale,
   });
 
   final GlobalKey buttonKey;
   final bool busy;
   final VoidCallback onPrintAndShare;
+  final VoidCallback onCompleteSale;
 
   @override
   Widget build(BuildContext context) {
@@ -558,7 +589,7 @@ class _Footer extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
           child: BlocBuilder<ReceiptCubit, ReceiptState>(
             buildWhen: (a, b) =>
                 a.totalCentavos != b.totalCentavos ||
@@ -594,40 +625,76 @@ class _Footer extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TapScale(
-                    child: FilledButton.icon(
-                      key: buttonKey,
-                      onPressed:
-                          state.lines.isEmpty || busy ? null : onPrintAndShare,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: isDark
-                            ? Colors.white
-                            : const Color(0xFF09090B),
-                        foregroundColor: isDark
-                            ? Colors.black
-                            : Colors.white,
-                        minimumSize: const Size.fromHeight(56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: brand.cornerStyle.mediumRadius,
-                        ),
-                      ),
-                      icon: busy
-                          ? SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: isDark ? Colors.black : Colors.white,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TapScale(
+                          child: OutlinedButton.icon(
+                            onPressed: state.lines.isEmpty || busy
+                                ? null
+                                : onCompleteSale,
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: brand.cornerStyle.mediumRadius,
                               ),
-                            )
-                          : const Icon(Icons.print_outlined, size: 20),
-                      label: const Text(
-                        'Print / Share',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                            ),
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Complete Sale',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 1,
+                        child: TapScale(
+                          child: FilledButton.icon(
+                            key: buttonKey,
+                            onPressed: state.lines.isEmpty || busy
+                                ? null
+                                : onPrintAndShare,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF09090B),
+                              foregroundColor: isDark
+                                  ? Colors.black
+                                  : Colors.white,
+                              minimumSize: const Size.fromHeight(52),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: brand.cornerStyle.mediumRadius,
+                              ),
+                            ),
+                            icon: busy
+                                ? SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color:
+                                          isDark ? Colors.black : Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.print_outlined, size: 18),
+                            label: const Text(
+                              'Print / Share',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );

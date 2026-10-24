@@ -8,6 +8,7 @@ import '../data/inventory_item.dart';
 import '../widgets/item_sheet.dart';
 import '../widgets/item_tile.dart';
 import '../widgets/micro_animations.dart';
+import 'stock_scanner_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -23,6 +24,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _openStockScanner(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const StockScannerScreen()),
+    );
   }
 
   Future<void> _delete(BuildContext context, InventoryItem item) async {
@@ -78,6 +85,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ],
           ),
         ),
+        actions: [
+          TapScale(
+            child: IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              tooltip: 'Scan Stock',
+              onPressed: () => _openStockScanner(context),
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(64),
           child: Padding(
@@ -110,12 +126,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ),
       ),
+      floatingActionButton: TapScale(
+        child: FloatingActionButton.extended(
+          heroTag: 'scan_stock_fab',
+          onPressed: () => _openStockScanner(context),
+          backgroundColor: isDark ? Colors.white : const Color(0xFF09090B),
+          foregroundColor: isDark ? Colors.black : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: brand.cornerStyle.mediumRadius,
+          ),
+          icon: const Icon(Icons.qr_code_scanner, size: 20),
+          label: const Text(
+            'Scan Stock',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ),
       body: BlocBuilder<InventoryCubit, InventoryState>(
         builder: (context, state) {
           final items = state.visible;
 
           if (items.isEmpty) {
-            return _EmptyState(searching: state.query.trim().isNotEmpty);
+            return _EmptyState(
+              searching: state.query.trim().isNotEmpty,
+              onScanStock: () => _openStockScanner(context),
+            );
           }
 
           final isSearching = state.query.trim().isNotEmpty;
@@ -184,7 +219,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   childCount: items.length,
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           );
         },
@@ -194,14 +229,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.searching});
+  const _EmptyState({
+    required this.searching,
+    required this.onScanStock,
+  });
 
   final bool searching;
+  final VoidCallback onScanStock;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final brand = BrandScope.of(context);
 
     return Center(
       child: Padding(
@@ -245,7 +285,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               searching
                   ? 'Try checking the barcode or name spelling.'
-                  : 'Scan a barcode from the Scan tab to get started.',
+                  : 'Scan product barcodes to add stock to your inventory.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -253,6 +293,29 @@ class _EmptyState extends StatelessWidget {
                     isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
               ),
             ),
+            if (!searching) ...[
+              const SizedBox(height: 20),
+              TapScale(
+                child: FilledButton.icon(
+                  onPressed: onScanStock,
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
+                        isDark ? Colors.white : const Color(0xFF09090B),
+                    foregroundColor:
+                        isDark ? Colors.black : Colors.white,
+                    minimumSize: const Size(160, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: brand.cornerStyle.mediumRadius,
+                    ),
+                  ),
+                  icon: const Icon(Icons.qr_code_scanner, size: 20),
+                  label: const Text(
+                    'Scan Stock',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

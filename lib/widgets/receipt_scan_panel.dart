@@ -8,7 +8,7 @@ import '../cubit/receipt_state.dart';
 import '../data/receipt.dart';
 import 'micro_animations.dart';
 
-/// What the most recent receipt-mode scan did.
+/// What the most recent counter scan did.
 class ReceiptScanResult {
   const ReceiptScanResult.added(this.barcode) : unknown = false;
   const ReceiptScanResult.unknown(this.barcode) : unknown = true;
@@ -19,8 +19,8 @@ class ReceiptScanResult {
   final bool unknown;
 }
 
-/// Sits over the camera in receipt mode. Shows the last scan with a bouncing
-/// badge, running quantity, tactile buttons, and receipt total.
+/// Sits at the bottom of the Counter scanner. Shows the last scanned item,
+/// running total, quantity controls, and the CTA to review the customer receipt.
 class ReceiptScanPanel extends StatelessWidget {
   const ReceiptScanPanel({
     super.key,
@@ -83,22 +83,48 @@ class ReceiptScanPanel extends StatelessWidget {
                         child: lines.isEmpty
                             ? Row(
                                 children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    size: 16,
-                                    color: isDark
-                                        ? const Color(0xFFA1A1AA)
-                                        : const Color(0xFF71717A),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Scan items to build a receipt',
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? const Color(0xFF1E1E22)
+                                          : const Color(0xFFF4F4F5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.point_of_sale_outlined,
+                                      size: 20,
                                       color: isDark
                                           ? const Color(0xFFA1A1AA)
                                           : const Color(0xFF71717A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Customer Counter',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark
+                                                ? Colors.white
+                                                : const Color(0xFF09090B),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Scan customer items one by one',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark
+                                                ? const Color(0xFFA1A1AA)
+                                                : const Color(0xFF71717A),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -143,16 +169,16 @@ class ReceiptScanPanel extends StatelessWidget {
                               foregroundColor: isDark
                                   ? Colors.black
                                   : Colors.white,
-                              minimumSize: const Size(116, 46),
+                              minimumSize: const Size(140, 46),
                               shape: RoundedRectangleBorder(
                                 borderRadius: brand.cornerStyle.smallRadius,
                               ),
                             ),
                             icon: const Icon(Icons.receipt_long, size: 18),
                             label: const Text(
-                              'Review',
+                              'Review Receipt',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -173,8 +199,7 @@ class ReceiptScanPanel extends StatelessWidget {
     final result = last;
     if (result == null) return const SizedBox(width: double.infinity);
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final brand = BrandScope.of(context);
 
     if (result.unknown) {
