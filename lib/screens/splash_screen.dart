@@ -17,8 +17,8 @@ const Duration _kEntrance = Duration(milliseconds: 950);
 const Duration _kHold = Duration(milliseconds: 180);
 
 /// Beautiful Mobbin-inspired splash screen adapted from msa-app.
-/// Features a glowing radial canvas, expanding ripple, animated circular
-/// progress ring, bouncy logo entrance, and fluid transition to the home shell.
+/// Features a compact, centered brand mark, ambient radial glow,
+/// expanding ripple, circular progress track, and fluid transition to the home shell.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.frozenAt});
 
@@ -110,7 +110,8 @@ class _SplashScreenState extends State<SplashScreen>
     final brand = BrandScope.of(context);
     final size = MediaQuery.sizeOf(context);
     final inset = MediaQuery.paddingOf(context);
-    final disc = (size.shortestSide * 0.36).clamp(120.0, 156.0);
+    // Smaller, more refined logo disc with generous breathing room
+    final disc = (size.shortestSide * 0.22).clamp(80.0, 94.0);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -130,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  center: Alignment(0, -0.15),
+                  center: Alignment(0, 0),
                   radius: 1.1,
                   colors: [
                     Color(0xFF18181B),
@@ -153,16 +154,16 @@ class _SplashScreenState extends State<SplashScreen>
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    Align(
-                      alignment: const Alignment(0, -0.12),
+                    // Perfectly centered hero mark
+                    Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
+                        constraints: const BoxConstraints(maxWidth: 380),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
-                              width: disc + 72,
-                              height: disc + 72,
+                              width: disc + 56,
+                              height: disc + 56,
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -185,7 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   Opacity(
                                     opacity: logoFade.clamp(0.0, 1.0),
                                     child: Transform.scale(
-                                      scale: 0.78 + 0.22 * logoIn,
+                                      scale: 0.82 + 0.18 * logoIn,
                                       child: _BrandDisc(
                                         size: disc,
                                         cornerStyle: brand.cornerStyle,
@@ -195,37 +196,37 @@ class _SplashScreenState extends State<SplashScreen>
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 20),
                             // App Name
                             Opacity(
                               opacity: title.clamp(0.0, 1.0),
                               child: Transform.translate(
-                                offset: Offset(0, 16 * (1 - title)),
+                                offset: Offset(0, 14 * (1 - title)),
                                 child: Text(
                                   brand.appName,
                                   style: const TextStyle(
-                                    fontSize: 28,
+                                    fontSize: 25,
                                     fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
+                                    letterSpacing: -0.6,
                                     color: Colors.white,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 5),
                             // Tagline
                             Opacity(
                               opacity: tagline.clamp(0.0, 1.0),
                               child: Transform.translate(
-                                offset: Offset(0, 10 * (1 - tagline)),
+                                offset: Offset(0, 8 * (1 - tagline)),
                                 child: Text(
                                   brand.tagline,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    color: Colors.white.withValues(alpha: 0.65),
+                                    letterSpacing: 0.1,
+                                    color: Colors.white.withValues(alpha: 0.60),
                                   ),
                                 ),
                               ),
@@ -238,7 +239,7 @@ class _SplashScreenState extends State<SplashScreen>
                     Positioned(
                       left: 24,
                       right: 24,
-                      bottom: math.max(28.0, inset.bottom + 20),
+                      bottom: math.max(28.0, inset.bottom + 18),
                       child: Opacity(
                         opacity: footer.clamp(0.0, 1.0),
                         child: Column(
@@ -248,10 +249,10 @@ class _SplashScreenState extends State<SplashScreen>
                               brand.organization,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.8,
-                                color: Colors.white.withValues(alpha: 0.60),
+                                color: Colors.white.withValues(alpha: 0.55),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -259,10 +260,10 @@ class _SplashScreenState extends State<SplashScreen>
                               brand.footerNote,
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1.0,
-                                color: Colors.white.withValues(alpha: 0.38),
+                                color: Colors.white.withValues(alpha: 0.35),
                               ),
                             ),
                           ],
@@ -280,7 +281,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// Logo disc container with tactile border and scanner iconography.
+/// Refined logo disc with generous internal margins and clean scanner emblem.
 class _BrandDisc extends StatelessWidget {
   const _BrandDisc({
     required this.size,
@@ -295,48 +296,27 @@ class _BrandDisc extends StatelessWidget {
     return Container(
       width: size,
       height: size,
+      padding: EdgeInsets.all(size * 0.22),
       decoration: BoxDecoration(
-        color: const Color(0xFF18181B),
-        borderRadius: BorderRadius.circular(size * 0.28),
+        color: const Color(0xFF141416),
+        borderRadius: BorderRadius.circular(size * 0.30),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
-          width: 1.8,
+          color: Colors.white.withValues(alpha: 0.22),
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.6),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: Colors.black.withValues(alpha: 0.65),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.qr_code_scanner_rounded,
-              color: Colors.white,
-              size: size * 0.44,
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                'MSME',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: size * 0.11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-          ],
+        child: Icon(
+          Icons.qr_code_scanner_rounded,
+          color: Colors.white,
+          size: size * 0.50,
         ),
       ),
     );
@@ -363,14 +343,14 @@ class _RingsPainter extends CustomPainter {
     final center = size.center(Offset.zero);
 
     // Glow
-    final glowRadius = discRadius * 2.1;
+    final glowRadius = discRadius * 2.0;
     canvas.drawCircle(
       center,
       glowRadius,
       Paint()
         ..shader = RadialGradient(
           colors: [
-            Colors.white.withValues(alpha: 0.18 * glow),
+            Colors.white.withValues(alpha: 0.16 * glow),
             Colors.white.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: glowRadius)),
@@ -378,19 +358,19 @@ class _RingsPainter extends CustomPainter {
 
     // Expanding Ripple
     if (ripple > 0 && ripple < 1) {
-      final r = discRadius + 14 + (discRadius * 0.85) * ripple;
+      final r = discRadius + 12 + (discRadius * 0.8) * ripple;
       canvas.drawCircle(
         center,
         r,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4
-          ..color = Colors.white.withValues(alpha: 0.28 * (1 - ripple)),
+          ..strokeWidth = 1.3
+          ..color = Colors.white.withValues(alpha: 0.25 * (1 - ripple)),
       );
     }
 
     // Progress Track and Arc
-    final ringRadius = discRadius + 14;
+    final ringRadius = discRadius + 12;
     final rect = Rect.fromCircle(center: center, radius: ringRadius);
 
     // Faint track
@@ -399,7 +379,7 @@ class _RingsPainter extends CustomPainter {
       ringRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0
+        ..strokeWidth = 1.8
         ..color = Colors.white.withValues(alpha: 0.12 * math.min(1.0, glow * 2)),
     );
 
@@ -412,14 +392,16 @@ class _RingsPainter extends CustomPainter {
         false,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2
+          ..strokeWidth = 2.0
           ..strokeCap = StrokeCap.round
-          ..color = Colors.white.withValues(alpha: 0.90),
+          ..color = Colors.white.withValues(alpha: 0.92),
       );
     }
   }
 
   @override
-  bool shouldRepaint(_RingsPainter old) =>
-      old.glow != glow || old.ripple != ripple || old.progress != progress;
+  bool shouldRepaint(_RingsPainter oldDelegate) =>
+      oldDelegate.glow != glow ||
+      oldDelegate.ripple != ripple ||
+      oldDelegate.progress != progress;
 }

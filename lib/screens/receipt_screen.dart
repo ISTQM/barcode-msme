@@ -55,11 +55,44 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ReceiptCubit>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final brand = BrandScope.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Receipt'),
+        title: BlocBuilder<ReceiptCubit, ReceiptState>(
+          builder: (context, state) {
+            final count = state.lines.length;
+            return Row(
+              children: [
+                const Text('Receipt'),
+                if (count > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF27272A)
+                          : const Color(0xFFE4E4E7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF09090B),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
         actions: [
           BlocBuilder<ReceiptCubit, ReceiptState>(
             buildWhen: (a, b) => a.lines.isEmpty != b.lines.isEmpty,
@@ -82,7 +115,18 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.only(bottom: 24),
               children: [
-                const _Options(),
+                _buildSectionHeader(context, 'DOCUMENT SETTINGS'),
+                const _DocumentSettingsGroup(),
+                const SizedBox(height: 12),
+                BlocBuilder<ReceiptCubit, ReceiptState>(
+                  builder: (context, state) {
+                    if (state.lines.isEmpty) return const SizedBox.shrink();
+                    return _buildSectionHeader(
+                      context,
+                      'RECEIPT ITEMS (${state.lines.length})',
+                    );
+                  },
+                ),
                 BlocBuilder<ReceiptCubit, ReceiptState>(
                   buildWhen: (a, b) => a.lines.length != b.lines.length,
                   builder: (context, state) {
@@ -99,7 +143,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   },
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: TapScale(
                     child: OutlinedButton.icon(
                       onPressed: () => showItemPicker(context),
@@ -111,7 +155,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                       icon: const Icon(Icons.add, size: 20),
                       label: const Text(
-                        'Add item',
+                        'Add item from inventory',
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -129,22 +173,68 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       ),
     );
   }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.1,
+          color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+        ),
+      ),
+    );
+  }
 }
 
-class _Options extends StatelessWidget {
-  const _Options();
+/// Unified document configuration card.
+class _DocumentSettingsGroup extends StatelessWidget {
+  const _DocumentSettingsGroup();
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brand = BrandScope.of(context);
+    final borderColor =
+        isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
     final cubit = context.read<ReceiptCubit>();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141416) : Colors.white,
+        borderRadius: brand.cornerStyle.mediumRadius,
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: BlocBuilder<ReceiptCubit, ReceiptState>(
         buildWhen: (a, b) => a.type != b.type || a.paper != b.paper,
         builder: (context, state) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                'Type',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFFA1A1AA)
+                      : const Color(0xFF71717A),
+                ),
+              ),
+              const SizedBox(height: 6),
               SleekSegmentedControl<ReceiptType>(
                 items: {
                   for (final type in ReceiptType.values) type: type.label,
@@ -152,7 +242,18 @@ class _Options extends StatelessWidget {
                 selected: state.type,
                 onChanged: cubit.setType,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              Text(
+                'Paper Width',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFFA1A1AA)
+                      : const Color(0xFF71717A),
+                ),
+              ),
+              const SizedBox(height: 6),
               SleekSegmentedControl<PaperWidth>(
                 items: {
                   for (final paper in PaperWidth.values) paper: paper.label,
@@ -177,7 +278,7 @@ class _EmptyHint extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 32),
       child: Column(
         children: [
           Container(
@@ -220,8 +321,6 @@ class _EmptyHint extends StatelessWidget {
   }
 }
 
-/// One receipt line. Reads its own line from the cubit so only this card
-/// rebuilds when its quantity or price changes.
 class _LineCard extends StatefulWidget {
   const _LineCard({super.key, required this.barcode});
 
@@ -275,16 +374,15 @@ class _LineCardState extends State<_LineCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final brand = BrandScope.of(context);
     final borderColor =
         isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
     final cubit = context.read<ReceiptCubit>();
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.fromLTRB(14, 10, 10, 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF141416) : Colors.white,
         borderRadius: brand.cornerStyle.mediumRadius,
@@ -341,7 +439,7 @@ class _LineCardState extends State<_LineCard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(right: 4),
                 child: Row(
@@ -447,8 +545,7 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final brand = BrandScope.of(context);
     final borderColor =
         isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7);
@@ -476,7 +573,7 @@ class _Footer extends StatelessWidget {
                       Text(
                         'Total Amount',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14.5,
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? const Color(0xFFA1A1AA)
