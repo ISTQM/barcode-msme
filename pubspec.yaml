@@ -1,14 +1,25 @@
-name: qr_msme
-description: "A new Flutter project."
+name: barcode_msme
+description: "Offline barcode inventory with BIR Excel export and PDF receipts."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.14.0+1
 
 environment:
   sdk: ^3.12.2
 
 dependencies:
+  audioplayers: ^6.8.1
+  excel: ^4.0.6
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
+  hive_ce: ^2.22.0
+  hive_ce_flutter: ^2.5.0
+  intl: ^0.20.2
+  mobile_scanner: ^7.4.2
+  path_provider: ^2.1.6
+  pdf: ^3.12.0
+  share_plus: ^13.3.1
+  vibration: ^3.2.1
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +28,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Bundled so receipt PDFs render without any network or system font lookup.
+  assets:
+    - assets/fonts/Roboto-Regular.ttf
+    - assets/fonts/Roboto-Bold.ttf
+    # Short scan tones, played from the app bundle.
+    - assets/sounds/
