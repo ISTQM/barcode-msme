@@ -60,7 +60,7 @@ class ExportService {
     final headerStyle = CellStyle(
       bold: true,
       fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
-      backgroundColorHex: ExcelColor.fromHexString('FF0E7C66'),
+      backgroundColorHex: ExcelColor.fromHexString('FF18181B'),
       horizontalAlign: HorizontalAlign.Center,
       verticalAlign: VerticalAlign.Center,
     );
