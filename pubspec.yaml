@@ -7,13 +7,16 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  archive: ^3.6.1
   audioplayers: ^6.8.1
+  barcode: ^2.2.9
   excel: ^4.0.6
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
   hive_ce: ^2.22.0
   hive_ce_flutter: ^2.5.0
+  image_picker: ^1.2.4
   intl: ^0.20.2
   mobile_scanner: ^7.4.2
   path_provider: ^2.1.6
@@ -35,3 +38,12 @@ flutter:
     - assets/fonts/Roboto-Bold.ttf
     # Short scan tones, played from the app bundle.
     - assets/sounds/
+
+  # The same Roboto, registered with Flutter so label previews and images use
+  # the letters the PDF does, on every platform.
+  fonts:
+    - family: LabelRoboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700

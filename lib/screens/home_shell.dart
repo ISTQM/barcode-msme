@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'barcode_library_screen.dart';
 import 'counter_screen.dart';
 import 'export_screen.dart';
 import 'inventory_screen.dart';
 
 /// Main navigation shell.
-/// 3 core retail tabs: Counter (cashier session), Inventory (products & stock intake), Export (reports).
+/// 4 tabs: Counter (cashier session), Inventory (products & stock intake),
+/// Barcodes (make and print barcodes for products), Export (reports).
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -37,6 +39,7 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           CounterScreen(active: _index == 0),
           const InventoryScreen(),
+          const BarcodeLibraryScreen(),
           const ExportScreen(),
         ],
       ),
@@ -71,10 +74,16 @@ class _HomeShellState extends State<HomeShell> {
                 isSelected: _index == 1,
               ),
               _buildDestination(
+                icon: Icons.qr_code_2_outlined,
+                selectedIcon: Icons.qr_code_2,
+                label: 'Barcodes',
+                isSelected: _index == 2,
+              ),
+              _buildDestination(
                 icon: Icons.ios_share_outlined,
                 selectedIcon: Icons.ios_share,
                 label: 'Export',
-                isSelected: _index == 2,
+                isSelected: _index == 3,
               ),
             ],
           ),

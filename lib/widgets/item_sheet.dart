@@ -56,12 +56,16 @@ class _ItemSheetState extends State<_ItemSheet> {
   static final DateFormat _stamp = DateFormat('MMM d, h:mm a');
 
   /// Duplicate scan mode: type an amount to add instead of a new total.
-  bool _adding = false;
+  late bool _adding;
 
   bool get _isExisting => widget.existing != null;
 
   /// A scan of a barcode that is already stored.
   bool get _isDuplicateScan => widget.scanned && _isExisting;
+
+  /// A scan of a product registered ahead of time (for example from the
+  /// Barcodes tab) that has no stock yet, so this scan is its first stock-in.
+  bool get _isFirstStockIn => _isDuplicateScan && widget.existing!.quantity == 0;
 
   int? get _parsedQuantity => int.tryParse(_quantity.text);
 
@@ -79,14 +83,17 @@ class _ItemSheetState extends State<_ItemSheet> {
   void initState() {
     super.initState();
     final existing = widget.existing;
+    _adding = _isFirstStockIn;
     _name = TextEditingController(text: existing?.name ?? '');
-    _quantity = TextEditingController(text: existing?.quantity.toString() ?? '');
+    _quantity = TextEditingController(
+      text: _adding ? '' : existing?.quantity.toString() ?? '',
+    );
     _price = TextEditingController(
       text: existing != null && existing.priceCentavos > 0
           ? Money.field(existing.priceCentavos)
           : '',
     );
-    if (existing != null) {
+    if (existing != null && !_adding) {
       _quantity.selection = TextSelection(
         baseOffset: 0,
         extentOffset: _quantity.text.length,
@@ -153,9 +160,11 @@ class _ItemSheetState extends State<_ItemSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              _isDuplicateScan
-                  ? 'Already in inventory'
-                  : _isExisting
+              _isFirstStockIn
+                  ? 'Ready for stock-in'
+                  : _isDuplicateScan
+                      ? 'Already in inventory'
+                      : _isExisting
                       ? 'Update item'
                       : 'New item',
               style: TextStyle(
@@ -209,7 +218,9 @@ class _ItemSheetState extends State<_ItemSheet> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '${widget.existing!.quantity} in stock · scanned ${_stamp.format(widget.existing!.scannedAt)}',
+                        _isFirstStockIn
+                            ? 'Registered ${_stamp.format(widget.existing!.scannedAt)} · no stock yet'
+                            : '${widget.existing!.quantity} in stock · scanned ${_stamp.format(widget.existing!.scannedAt)}',
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,

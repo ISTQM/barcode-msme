@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/app_theme.dart';
 import 'core/brand_config.dart';
+import 'cubit/barcode_cubit.dart';
 import 'cubit/inventory_cubit.dart';
 import 'cubit/receipt_cubit.dart';
+import 'data/barcode_repository.dart';
 import 'data/inventory_repository.dart';
 import 'screens/splash_screen.dart';
 import 'services/scan_feedback.dart';
@@ -12,19 +14,28 @@ import 'services/scan_feedback.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final repository = await InventoryRepository.open();
+  final barcodeRepository = await BarcodeRepository.open();
   final feedback = await ScanFeedback.load();
-  runApp(StockScanApp(repository: repository, feedback: feedback));
+  runApp(
+    StockScanApp(
+      repository: repository,
+      barcodeRepository: barcodeRepository,
+      feedback: feedback,
+    ),
+  );
 }
 
 class StockScanApp extends StatelessWidget {
   const StockScanApp({
     super.key,
     required this.repository,
+    required this.barcodeRepository,
     required this.feedback,
     this.brandConfig = BrandConfig.mobbinMonochrome,
   });
 
   final InventoryRepository repository;
+  final BarcodeRepository barcodeRepository;
   final ScanFeedback feedback;
   final BrandConfig brandConfig;
 
@@ -37,6 +48,7 @@ class StockScanApp extends StatelessWidget {
         child: MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => InventoryCubit(repository)),
+            BlocProvider(create: (_) => BarcodeCubit(barcodeRepository)),
             BlocProvider(create: (_) => ReceiptCubit()),
           ],
           child: MaterialApp(
